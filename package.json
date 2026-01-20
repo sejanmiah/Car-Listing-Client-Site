@@ -14,6 +14,7 @@
     "@tanstack/react-query": "^5.90.18",
     "axios": "^1.13.2",
     "firebase": "^12.8.0",
+    "framer-motion": "^12.27.4",
     "lucide-react": "^0.562.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

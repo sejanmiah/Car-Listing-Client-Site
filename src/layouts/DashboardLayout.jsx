@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useSearchParams } from 'react-router-dom';
 import { LayoutDashboard, Car, Users, LogOut, PlusCircle, User, Bell, Search, Sun, Moon, Inbox } from 'lucide-react';
 import { getImageUrl } from '../utils/imageUrl';
+
 
 const DashboardLayout = () => {
   const { currentUser, logout } = useAuth();
@@ -14,6 +15,62 @@ const DashboardLayout = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
+  
+  // Theme Transition State
+  const [revealConfig, setRevealConfig] = useState(null);
+
+  useEffect(() => {
+    // Initial load class handling
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
+  const toggleTheme = (e) => {
+    if (!document.startViewTransition) {
+        setIsDarkMode(prev => !prev);
+        return;
+    }
+
+    const doc = document.documentElement;
+    const x = e.clientX;
+    const y = e.clientY;
+    const endRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+    );
+
+    const transition = document.startViewTransition(() => {
+        setIsDarkMode(prev => !prev);
+    });
+
+    transition.ready.then(() => {
+        const clipPath = [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${endRadius}px at ${x}px ${y}px)`,
+        ];
+        
+        doc.animate(
+            {
+                clipPath: clipPath, 
+            },
+            {
+                duration: 500,
+                easing: 'ease-in',
+                pseudoElement: '::view-transition-new(root)',
+            }
+        );
+    });
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
 
   // Notification State
   const [notifications, setNotifications] = useState([]);
@@ -97,22 +154,7 @@ const DashboardLayout = () => {
       }
   };
 
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
 
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
-
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
 
   const navItemClass = ({ isActive }) =>
     `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
@@ -165,7 +207,6 @@ const DashboardLayout = () => {
               <Users size={20} />
               <span className="font-medium">Manage Users</span>
             </NavLink>
-
           )}
 
           {isAdmin && (
@@ -209,13 +250,12 @@ const DashboardLayout = () => {
                  {/* Dark Mode Toggle */}
                  <button 
                     onClick={toggleTheme}
-                    className="p-2 text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-yellow-400 transition-colors duration-300 rounded-full hover:bg-indigo-50 dark:hover:bg-gray-700"
+                    className="relative p-2 text-gray-400 hover:text-indigo-600 dark:text-gray-500 dark:hover:text-yellow-400 transition-colors duration-300 rounded-full hover:bg-indigo-50 dark:hover:bg-gray-700 z-50 overflow-hidden"
                     title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
                  >
                     {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
                  </button>
 
-                 {/* Notification Bell (Visual Only) */}
                  {/* Notification Bell */}
                  <div className="relative" ref={notificationRef}>
                      <button 
@@ -317,6 +357,8 @@ const DashboardLayout = () => {
           <Outlet />
         </main>
       </div>
+
+
     </div>
   );
 };
