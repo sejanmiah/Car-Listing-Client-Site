@@ -3,12 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../services/api';
 import { getImageUrl } from '../utils/imageUrl';
 import { MapPin, Calendar, Clock, DollarSign, User, ArrowLeft, Share2, X, Send } from 'lucide-react';
+import ImageGallery from '../components/ImageGallery';
 
 const CarDetails = () => {
     const { id } = useParams();
     const [car, setCar] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [activeImage, setActiveImage] = useState(0);
     const [showContactModal, setShowContactModal] = useState(false);
     const [contactForm, setContactForm] = useState({ name: '', email: '', phone: '' });
     const [submitStatus, setSubmitStatus] = useState('idle'); // idle, submitting, success, error
@@ -53,10 +53,11 @@ const CarDetails = () => {
         fetchCar();
     }, [id]);
 
+    const images = car?.images ? JSON.parse(car.images) : [];
+
     if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
     if (!car) return <div className="min-h-screen flex items-center justify-center">Car not found</div>;
 
-    const images = car.images ? JSON.parse(car.images) : [];
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -66,27 +67,8 @@ const CarDetails = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Left Column: Images */}
-                <div className="lg:col-span-2 space-y-4">
-                    <div className="bg-gray-100 rounded-xl overflow-hidden h-96 relative group">
-                        {images.length > 0 ? (
-                            <img src={getImageUrl(images[activeImage])} alt={car.title} className="w-full h-full object-cover" />
-                        ) : (
-                            <div className="flex items-center justify-center h-full text-gray-400">No Image Available</div>
-                        )}
-                    </div>
-                    {images.length > 1 && (
-                        <div className="flex gap-4 overflow-x-auto pb-2">
-                            {images.map((img, index) => (
-                                <button 
-                                    key={index}
-                                    onClick={() => setActiveImage(index)}
-                                    className={`relative w-24 h-24 rounded-lg overflow-hidden border-2 transition-colors ${activeImage === index ? 'border-indigo-600' : 'border-transparent'}`}
-                                >
-                                    <img src={getImageUrl(img)} alt={`View ${index + 1}`} className="w-full h-full object-cover" />
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                <div className="lg:col-span-2">
+                    <ImageGallery images={images} title={car.title} />
                 </div>
 
                 {/* Right Column: Details */}
